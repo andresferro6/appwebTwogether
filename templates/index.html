@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workana Work</title>
+
+    <!-- Bootstrap CSS from CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="container">
+            <div class="card">
+                <div class="card-header">
+                    <h1 class="text-center">FTP File Listing</h1>
+                </div>
+                <div class="card-body">
+                    <table class="table" id="table-folder">
+                        <thead>
+                            <tr>
+                                <th scope="col">Folder</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for file in files %}
+                                <tr>
+                                    <td>{{ file }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-info btn-xs">
+                                            <i class="bi bi-eye text-dark"></i> Preview
+                                        </button>
+                                        <button type="button" class="btn btn-warning btn-xs">
+                                            <i class="bi bi-eye text-dark"></i> Update
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS from CDN (optional, for some features like tooltips and popovers) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+
+<script>
+const tableEvents = document.querySelector("#table-folder");
+
+tableEvents.addEventListener("click", function (event) {
+    // Check if the clicked element is a button (you can adjust this condition based on your actual structure)
+    if (event.target.tagName === "BUTTON") {
+        // Get the closest table row (tr) from the clicked button
+        const clickedRow = event.target.closest("tr");
+
+        // Get data from the clicked row
+        const folderName = clickedRow.querySelector("td:first-child").textContent; // Assuming the first column contains the folder name
+        const actionButton = event.target.textContent.trim(); // Get the text content of the clicked button
+
+        // You can now use the obtained information as needed
+        console.log("Clicked Folder Name:", folderName);
+        console.log("Clicked Action Button:", actionButton);
+    }
+});
+
+
+</script>
+
+</html>
