@@ -18,9 +18,9 @@ class User(db.Model):
     password = db.Column(db.String(120), nullable=False)
 
 # Replace the following with your FTP server details
-ftp_host = os.getenv("FTP_HOST")
-ftp_user = os.getenv("FTP_USER")
-ftp_passwd = os.getenv("FTP_PASSWD")
+ftp_host = "195.23.61.65"
+ftp_user = "AntonioFrancisco_16803"
+ftp_passwd = "S5lOvr6"
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
