@@ -11,38 +11,68 @@
 <body>
     <div class="container mt-5">
         <div class="loadingModal"></div>
-        <div class="container">
-            <div class="card">
-                <div class="card-header">
-                    <h1 class="text-center">FTP File Listing</h1>
-                </div>
-                <div class="card-body">
-                    <table class="table" id="table-folder">
-                        <thead>
-                            <tr>
-                                <th scope="col">Folder</th>
-                                <th scope="col">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for file in files %}
-                                <tr>
-                                    <td>{{ file }}</td>
-                                    <td>
-                                        <button type="button" class="btn btn-info btn-xs">
-                                            <i class="bi bi-eye text-dark"></i> Preview
-                                        </button>
-                                        <button type="button" class="btn btn-warning btn-xs">
-                                            <i class="bi bi-eye text-dark"></i> Update
-                                        </button>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+        <div class="row">
+
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Información FTP</h5>
+                    </div>
+                    <div class="card-body">
+                            <!-- Campo FTP_HOST -->
+                            <div class="mb-3">
+                                <input type="text" class="form-control" id="ftpHost" name="ftpHost" placeholder="FTP Host"required>
+                            </div>
+            
+                            <!-- Campo FTP_USER -->
+                            <div class="mb-3">
+                                <input type="text" class="form-control" id="ftpUser" name="ftpUser" placeholder="FTP User" required>
+                            </div>
+            
+                            <!-- Campo FTP_PASSWD -->
+                            <div class="mb-3">
+                                <input type="password" class="form-control" id="ftpPasswd" name="ftpPasswd" placeholder="FTP Password" required>
+                            </div>
+                    </div>
                 </div>
             </div>
+            <div class="col-6">
+                <div class="container">
+                    <div class="card">
+                        <div class="card-header">
+                            <h1 class="text-center">FTP File Listing</h1>
+                        </div>
+                        <div class="card-body">
+                            <table class="table" id="table-folder">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Folder</th>
+                                        <th scope="col">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for file in files %}
+                                        <tr>
+                                            <td>{{ file }}</td>
+                                            <td>
+                                                <button type="button" class="btn btn-info btn-xs">
+                                                    <i class="bi bi-eye text-dark"></i> Preview
+                                                </button>
+                                                <button type="button" class="btn btn-warning btn-xs">
+                                                    <i class="bi bi-eye text-dark"></i> Update
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
+
     </div>
 
     
@@ -81,18 +111,27 @@ tableEvents.addEventListener("click", function (event) {
     const textInputSpan = document.getElementById('text-input');
     const textResultSpan = document.getElementById('text-result');
 
+
     // Check if the clicked element is a button (you can adjust this condition based on your actual structure)
     if (event.target.tagName === "BUTTON") {
-        // Get the closest table row (tr) from the clicked button
+        textResultSpan.textContent = '';
+        const ftpHost = document.getElementById('ftpHost').value;
+        const ftpUser = document.getElementById('ftpUser').value;
+        const ftpPasswd = document.getElementById('ftpPasswd').value;
         const clickedRow = event.target.closest("tr");
-
-        // Get data from the clicked row
+       
         const folderName = clickedRow.querySelector("td:first-child").textContent; // Assuming the first column contains the folder name
         const actionButton = event.target.textContent.trim(); // Get the text content of the clicked button
 
-        // You can now use the obtained information as needed
-        console.log("Clicked Folder Name:", folderName);
-        console.log("Clicked Action Button:", actionButton);
+
+        const jsonData = {
+            folderName: folderName,
+            actionButton: actionButton,
+            ftpHost: ftpHost,
+            ftpUser: ftpUser,
+            ftpPasswd: ftpPasswd
+
+        };
 
         // Check if the action is 'update'
         if (actionButton.toLowerCase() === 'update') {
@@ -102,29 +141,36 @@ tableEvents.addEventListener("click", function (event) {
 
             loadingModal.show();
 
-            // Send a fetch request to the update URL
             fetch(updateUrl, {
-                method: 'GET',  // Change the HTTP method as needed (GET, POST, etc.)
-                // Add any additional headers or request parameters if necessary
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Add any additional headers if needed
+                },
+                body: JSON.stringify(jsonData)
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json(); // Assuming the response is in JSON format
-            })
-            .then(data => {
-                // Handle the response data as needed
-                textResultSpan.textContent = 'Update request successful', data;
-                setTimeout(() => {
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json(); // Assuming the response is in JSON format
+                })
+                .then(data => {
+                    // Handle the response data as needed
+                    textResultSpan.textContent = '';
+                    textResultSpan.textContent = 'Update request successful ' + JSON.stringify(data);
+                    setTimeout(() => {
+                        loadingModal.hide();
+                    }, 3000);
+                })
+                .catch(error => {
                     loadingModal.hide();
-                }, 3000);
+                    console.error('Update request failed:', error);
+                });
 
-            })
-            .catch(error => {
-                loadingModal.hide();
-                console.error('Update request failed:', error);
-            });
+
+
+
         }
     }
 });
