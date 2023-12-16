@@ -2,9 +2,11 @@ import os
 import pandas as pd
 
 from ftplib import FTP
+
+from pandasql import sqldf
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -61,14 +63,30 @@ def register():
             return redirect(url_for('login'))
     return render_template('register.html')
 
-
-@app.route('/files')
+@app.route('/files', methods= ["GET", "POST"])
 def index():
-    ftp = FTP(ftp_host)
-    ftp.login( user = ftp_user, passwd = ftp_passwd)
-    files = [i for i in ftp.nlst() if i.endswith("csv")]
-    ftp.quit()
-    return render_template('index.html', files = files)
+    if request.method == "POST":
+        try:
+            data = request.get_json()
+            ftp = FTP(data["ftpHost"])
+            ftp.login( user = data["ftpUser"], passwd = data["ftpPasswd"])
+            files = [i for i in ftp.nlst() if i.endswith("csv")]
+            ftp.quit()
+            
+            return jsonify({
+                "status": 200,
+                "message": "Succesful",
+                "data": files
+            })
+
+        except Exception as e:
+            return jsonify({
+                "status": 400,
+                "message": e,
+            })
+
+
+    return render_template('index.html')
 
 @app.route('/update/<string:nombre>', methods = ["POST"])
 def get_file(nombre: str):
@@ -89,6 +107,47 @@ def get_file(nombre: str):
         return jsonify({"status": 400,
                     "message": f"Caught a generic exception: {e}"})
 
+@app.route('/processdata')
+def process():
+    frame_preco_databox = pd.read_csv("PrecoDatabox_16803.csv", encoding='latin-1', delimiter=';')
+    frame_stock = pd.read_csv("StockQDatabox_16803.csv", encoding='latin-1', delimiter=';')
+    cart_stock = pd.read_csv("CatArtDatabox.csv", encoding='latin-1', delimiter=';', on_bad_lines = "skip")
+
+    query = """
+    select       
+           preco.PRCUNIT,
+           preco.PSC,
+           tok.QTDDISP,
+           tok.PROXENT,
+           cart.*
+    from cart_stock cart
+    left join frame_preco_databox preco
+    on cart.EAN = preco.EAN
+    left join frame_stock tok
+    on cart.ean = tok.ean
+    """
+    result_frame = sqldf(query)
+    result_frame.to_csv("result.csv")
+    return result_frame.iloc[:,:10].head(10).to_json(orient = "records")
+
+
+def get_value(value):
+    if value == "Has Headers":
+        return "infer"
+    return 1
+
+@app.route('/file/<string:nombre>', methods = ["POST"])
+def showfile(nombre: str):
+    try:
+        data = request.get_json()
+        try:
+            frame = pd.read_csv(data.get("folderName"), header = get_value(data.get("headers")) , encoding = data.get("encoder"), delimiter = data.get("delimiter"))
+            return frame.head(10).iloc[:, :4].to_json(orient = "records")
+        except:
+            frame = pd.read_csv(data.get("folderName"), header = get_value(data.get("headers")) , encoding = data.get("encoder"), delimiter = data.get("delimiter"), on_bad_lines = "skip")
+            return frame.head(10).iloc[:, :4].to_json(orient = "records")
+    except Exception as e:
+        return {"error": e}
 
 if __name__ == '__main__':
     with app.app_context():
